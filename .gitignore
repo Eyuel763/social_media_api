@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.Python
+.pytest_cache
+
+# Django
+*.log
+*.pot
+*.mo
+*.sqlite3 # IMPORTANT: Don't commit your local SQLite database
+media/ # IMPORTANT: Don't commit uploaded media files (these should be stored in a cloud service in production)
+static_root/ # If you collect static files here
+
+# Virtual environment
+venv/
+env/
+*.venv/
+
+# Environment variables 
+.env 
+
+# IDE files 
+.vscode/
+.idea/
+
+# Operating System files
+.DS_Store
+Thumbs.db

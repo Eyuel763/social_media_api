@@ -3,6 +3,8 @@ from rest_framework.pagination import PageNumberPagination
 from .models import Post, Comment
 from .serializers import PostSerializer, CommentSerializer
 from .permissions import IsOwnerOrReadOnly # Custom permission
+from rest_framework.generics import ListAPIView
+from django_filters.rest_framework import DjangoFilterBackend
 
 class StandardResultsPagination(PageNumberPagination):
     page_size = 10
@@ -49,3 +51,22 @@ class CommentViewSet(viewsets.ModelViewSet):
         else:
             # If not nested, ensure 'post' field is provided in the request data
             serializer.save(author=self.request.user)
+
+class UserFeedView(ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticated] # Only authenticated users can see their feed
+    pagination_class = StandardResultsPagination # Apply pagination to the feed
+    
+    def get_queryset(self):
+        user = self.request.user
+        # Get all users that the current user is following
+        # 'following' is the related_name on the 'followers' ManyToMany field in the User model
+        followed_users = user.following.all()
+        
+        # Combine the followed users with the current user to create a feed
+        combined_users = list(followed_users) + [user] # Include the current user in the feed
+        
+        # Filter posts where the author is one of the followed users
+        # Order by created_at in descending order (most recent first)
+        queryset = Post.objects.filter(author__in=combined_users).order_by('-created_at')
+        return queryset

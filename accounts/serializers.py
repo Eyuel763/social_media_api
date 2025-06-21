@@ -4,10 +4,23 @@ from .models import User
 from django.contrib.auth import authenticate
 
 class UserSerializer(serializers.ModelSerializer):
+    followers_usernames = serializers.SlugRelatedField(
+        many=True,
+        read_only=True,
+        slug_field='username',
+        source='followers' # Accesses users who follow this instance
+    )
+    following_usernames = serializers.SlugRelatedField(
+        many=True,
+        read_only=True,
+        slug_field='username',
+        source='following' # Accesses users this instance is following (via related_name)
+    )
+    
     class Meta:
         model = User
         fields = ('id', 'username', 'email', 'bio', 'profile_picture', 'followers', 'following')
-        read_only_fields = ('followers', 'following',) # followers and following will be managed separately
+        read_only_fields = ('followers_username', 'following_username',) # followers and following will be managed separately
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)

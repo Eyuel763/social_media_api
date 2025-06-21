@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
 from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserSerializer
 from .models import User
 
@@ -54,3 +56,42 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
     def patch(self, request, *args, **kwargs):
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
+
+class UserFollowView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk, format=None):
+        # Get the user to be followed
+        user_to_follow = get_object_or_404(User, pk=pk)
+        # Get the authenticated user who wants to follow
+        current_user = request.user
+
+        if current_user == user_to_follow:
+            return Response({"detail": "You cannot follow yourself."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Add user_to_follow to the current_user's 'following' list.
+        # 'following' is the related_name for the reverse relationship of 'followers' field on User model.
+        if user_to_follow not in current_user.following.all():
+            current_user.following.add(user_to_follow)
+            return Response({"detail": f"You are now following {user_to_follow.username}."}, status=status.HTTP_200_OK)
+        else:
+            return Response({"detail": f"You are already following {user_to_follow.username}."}, status=status.HTTP_409_CONFLICT) # 409 Conflict if already following
+
+class UserUnfollowView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk, format=None):
+        # Get the user to be unfollowed
+        user_to_unfollow = get_object_or_404(User, pk=pk)
+        # Get the authenticated user who wants to unfollow
+        current_user = request.user
+
+        if current_user == user_to_unfollow:
+            return Response({"detail": "You cannot unfollow yourself."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Remove user_to_unfollow from the current_user's 'following' list.
+        if user_to_unfollow in current_user.following.all():
+            current_user.following.remove(user_to_unfollow)
+            return Response({"detail": f"You have unfollowed {user_to_unfollow.username}."}, status=status.HTTP_200_OK)
+        else:
+            return Response({"detail": f"You are not following {user_to_unfollow.username}."}, status=status.HTTP_409_CONFLICT) # 409 Conflict if not following

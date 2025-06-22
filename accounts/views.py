@@ -1,12 +1,14 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
+from django.contrib.contenttypes.models import ContentType
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserSerializer
 from .models import User
+from notifications.models import Notification
 
 class UserRegistrationView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -73,9 +75,17 @@ class UserFollowView(APIView):
         # 'following' is the related_name for the reverse relationship of 'followers' field on User model.
         if user_to_follow not in current_user.following.all():
             current_user.following.add(user_to_follow)
+
+            # Create notification for the user who was followed
+            Notification.objects.create(
+                recipient=user_to_follow, # User being followed receives notification
+                actor=current_user, # User who initiated the follow
+                verb='followed you',
+                target=current_user # Target is the user who followed
+            )
             return Response({"detail": f"You are now following {user_to_follow.username}."}, status=status.HTTP_200_OK)
         else:
-            return Response({"detail": f"You are already following {user_to_follow.username}."}, status=status.HTTP_409_CONFLICT) # 409 Conflict if already following
+            return Response({"detail": f"You are already following {user_to_follow.username}."}, status=status.HTTP_409_CONFLICT)
 
 class UserUnfollowView(APIView):
     permission_classes = [IsAuthenticated]

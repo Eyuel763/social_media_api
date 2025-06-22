@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',  # Django REST Framework for API development
     'rest_framework.authtoken',  # Token authentication for DRF
     'posts',
+    'notifications',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'  # Use custom user model
